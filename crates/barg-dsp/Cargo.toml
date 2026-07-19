@@ -1,0 +1,7 @@
+[package]
+name = "casa13-dsp"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+casa13-types = { workspace = true }

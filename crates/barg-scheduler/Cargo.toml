@@ -1,0 +1,9 @@
+[package]
+name = "casa13-scheduler"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+casa13-types = { workspace = true }
+heapless = { workspace = true }
+rtrb = { workspace = true }
