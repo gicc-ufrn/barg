@@ -1,0 +1,8 @@
+[package]
+name = "casa13-perception"
+version.workspace = true
+edition.workspace = true
+
+# Camada de percepção V4 (transdução acústico→simbólica). Sem dependências:
+# roda no audio thread, só aritmética sobre buffers de canal.
+[dependencies]
