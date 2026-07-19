@@ -1,10 +1,40 @@
 //! PercussionSynth — síntese procedural de 6 vozes afro-brasileiras.
 //! RT-safe: sem alocação, voice stealing, latência de agendamento.
 
-use casa13_types::Voice;
+use casa13_types::{Voice, VOICE_COUNT};
 use core::f64::consts::PI;
 
 const MAX_VOICES: usize = 24;
+
+/// Parâmetros de síntese procedural por voz. Tabela de dados em vez de números
+/// mágicos espalhados num `match` — legível e afinável num só lugar.
+struct VoiceTimbre {
+    f0: f64,        // fundamental (Hz)
+    f1: f64,        // parcial adicional (0 = ausente)
+    f_start: f64,   // início da queda de pitch (usado só se pitch_tau > 0)
+    a0: f32,        // amplitude da fundamental
+    a1: f32,        // amplitude da parcial
+    noise_mix: f32, // 0 = tonal, 1 = ruído
+    pitch_tau: f32, // constante de queda de pitch (s); 0 = sem queda
+    decay: f32,     // constante de decaimento do envelope (s)
+}
+
+/// Ordem = enum `Voice` (Agogo, Tamborim, Ganza, SurdoLow, SurdoResp, Repique).
+#[rustfmt::skip]
+const TIMBRES: [VoiceTimbre; VOICE_COUNT] = [
+    // Agogo
+    VoiceTimbre { f0: 780.0, f1: 1180.0, f_start: 0.0, a0: 0.7, a1: 0.5, noise_mix: 0.0, pitch_tau: 0.0, decay: 0.13 },
+    // Tamborim
+    VoiceTimbre { f0: 1800.0, f1: 0.0, f_start: 0.0, a0: 0.3, a1: 0.0, noise_mix: 0.8, pitch_tau: 0.0, decay: 0.035 },
+    // Ganza
+    VoiceTimbre { f0: 0.0, f1: 0.0, f_start: 0.0, a0: 0.0, a1: 0.0, noise_mix: 1.0, pitch_tau: 0.0, decay: 0.045 },
+    // SurdoLow
+    VoiceTimbre { f0: 52.0, f1: 0.0, f_start: 95.0, a0: 1.0, a1: 0.0, noise_mix: 0.05, pitch_tau: 0.03, decay: 0.22 },
+    // SurdoResp
+    VoiceTimbre { f0: 68.0, f1: 0.0, f_start: 120.0, a0: 0.9, a1: 0.0, noise_mix: 0.05, pitch_tau: 0.03, decay: 0.18 },
+    // Repique
+    VoiceTimbre { f0: 380.0, f1: 0.0, f_start: 0.0, a0: 0.4, a1: 0.0, noise_mix: 0.7, pitch_tau: 0.0, decay: 0.09 },
+];
 
 #[derive(Clone)]
 struct VoiceState {
@@ -161,60 +191,16 @@ impl PercussionSynth {
     }
 
     fn set_params(v: &mut VoiceState, sr: f64) {
-        v.f1 = 0.0;
-        v.a1 = 0.0;
-        v.pitch_tau = 0.0;
-        v.f_start = 0.0;
-
-        let decay: f32 = match v.voice_type {
-            Voice::SurdoLow => {
-                v.f0 = 52.0;
-                v.f_start = 95.0;
-                v.a0 = 1.0;
-                v.noise_mix = 0.05;
-                v.pitch_tau = 0.03;
-                0.22
-            }
-            Voice::SurdoResp => {
-                v.f0 = 68.0;
-                v.f_start = 120.0;
-                v.a0 = 0.9;
-                v.noise_mix = 0.05;
-                v.pitch_tau = 0.03;
-                0.18
-            }
-            Voice::Agogo => {
-                v.f0 = 780.0;
-                v.f1 = 1180.0;
-                v.a0 = 0.7;
-                v.a1 = 0.5;
-                v.noise_mix = 0.0;
-                0.13
-            }
-            Voice::Tamborim => {
-                v.f0 = 1800.0;
-                v.a0 = 0.3;
-                v.noise_mix = 0.8;
-                0.035
-            }
-            Voice::Ganza => {
-                v.f0 = 0.0;
-                v.a0 = 0.0;
-                v.noise_mix = 1.0;
-                0.045
-            }
-            Voice::Repique => {
-                v.f0 = 380.0;
-                v.a0 = 0.4;
-                v.noise_mix = 0.7;
-                0.09
-            }
-        };
-
-        if v.pitch_tau <= 0.0 {
-            v.f_start = v.f0;
-        }
-        v.env_coef = (-1.0 / (decay * sr as f32)).exp();
+        let t = &TIMBRES[v.voice_type as usize];
+        v.f0 = t.f0;
+        v.f1 = t.f1;
+        v.a0 = t.a0;
+        v.a1 = t.a1;
+        v.noise_mix = t.noise_mix;
+        v.pitch_tau = t.pitch_tau;
+        // Sem queda de pitch, f_start = f0 (evita rampa espúria).
+        v.f_start = if t.pitch_tau > 0.0 { t.f_start } else { t.f0 };
+        v.env_coef = (-1.0 / (t.decay * sr as f32)).exp();
     }
 
     fn pick_index(&self) -> usize {

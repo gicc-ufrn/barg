@@ -9,7 +9,6 @@ fn one_pole(sr: f64, ms: f64) -> f32 {
 }
 
 pub struct IntensityAnalyzer {
-    sample_rate: f64,
     // Envelopes de energia
     fast_env: f32,
     slow_env: f32,
@@ -34,7 +33,6 @@ pub struct IntensityAnalyzer {
 impl IntensityAnalyzer {
     pub fn new(sample_rate: f64) -> Self {
         Self {
-            sample_rate,
             fast_env: 0.0,
             slow_env: 0.0,
             rms_env: 0.0,

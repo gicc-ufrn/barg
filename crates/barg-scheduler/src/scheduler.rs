@@ -48,18 +48,13 @@ impl SchedulerAntecipado {
 
     /// Retorna eventos para o step dado no compasso atual.
     /// Filtra eventos cujo frame_offset cai no range do step.
-    pub fn events_for_step(&self, step: u8, samples_per_step: f64) -> &[NoteEvent] {
+    /// Retorna todos os eventos do compasso atual. O caller filtra por janela de
+    /// step (ver `casa13_pull_output`). TODO(arquitetura): mover o filtro por range
+    /// para cá como `dispatch_step()`, tornando o dispatch uma unidade testável em
+    /// vez de lógica duplicada no FFI e no jitter_benchmark.
+    pub fn events_for_step(&self, _step: u8, _samples_per_step: f64) -> &[NoteEvent] {
         match &self.current_bar {
-            Some(bar) => {
-                // Os eventos são armazenados com frame_offset absoluto dentro do compasso.
-                // Retornamos todos os eventos (o caller faz a seleção por step se necessário).
-                // Para simplificar na POC: todos os eventos do BarBuffer são despachados
-                // no step correspondente ao seu frame_offset.
-                // Na implementação real, filtramos por range.
-                let _ = samples_per_step; // usado em implementação completa
-                // Retorna slice completo (caller usa step para filtrar)
-                bar.events.as_slice()
-            }
+            Some(bar) => bar.events.as_slice(),
             None => &[],
         }
     }

@@ -29,12 +29,10 @@ impl QuantizedLaunch {
 
     /// Chamado a cada step. Retorna Some(cue) se é fronteira de quantum.
     pub fn poll(&mut self, step: u8) -> Option<Cue> {
-        if self.pending_cue.is_none() {
-            return None;
-        }
+        self.pending_cue?; // nada pendente → None (Cue é Copy)
         let is_boundary = match self.quantum {
             LaunchQuantum::Bar => step == 0,
-            LaunchQuantum::Beat => step % 4 == 0,
+            LaunchQuantum::Beat => step.is_multiple_of(4),
         };
         if is_boundary {
             self.pending_cue.take()
