@@ -22,8 +22,9 @@ impl SchedulerAntecipado {
     }
 
     /// Chamado na fronteira de compasso (step 0). Tenta pop da BarQueue.
-    /// RT-safe.
-    pub fn on_bar_boundary(&mut self, consumer: &mut rtrb::Consumer<BarBuffer>) {
+    /// RT-safe. Retorna `true` se consumiu um compasso fresco da fila (uma vaga foi
+    /// liberada) — o caller usa isso para sinalizar a gen thread (§5.1).
+    pub fn on_bar_boundary(&mut self, consumer: &mut rtrb::Consumer<BarBuffer>) -> bool {
         // Salva current como fallback
         if let Some(ref current) = self.current_bar {
             self.fallback_bar = Some(current.clone());
@@ -33,6 +34,7 @@ impl SchedulerAntecipado {
             Ok(bar) => {
                 self.current_bar = Some(bar);
                 self.cold_start = false;
+                true
             }
             Err(_) => {
                 if self.cold_start {
@@ -42,6 +44,7 @@ impl SchedulerAntecipado {
                     self.current_bar = self.fallback_bar.clone();
                     self.overrun_count += 1;
                 }
+                false
             }
         }
     }
