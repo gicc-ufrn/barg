@@ -93,6 +93,47 @@ pub enum PresetId {
     Baiao = 2,
 }
 
+/// Seção de arranjo (Gap D) — cena disparável por pad/pedal que muda o estado do
+/// acompanhamento (orquestração/energia/vamp). Modelo Fela/JB: navegar a forma
+/// verso→solo→break→ponte regendo pela energia, não trocando de instrumento.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SceneId {
+    Intro = 0,
+    Verso = 1,
+    Solo = 2,
+    Break = 3,
+    Ponte = 4,
+}
+
+pub const SCENE_COUNT: usize = 5;
+
+impl SceneId {
+    pub fn from_index(i: u32) -> Option<Self> {
+        match i {
+            0 => Some(SceneId::Intro),
+            1 => Some(SceneId::Verso),
+            2 => Some(SceneId::Solo),
+            3 => Some(SceneId::Break),
+            4 => Some(SceneId::Ponte),
+            _ => None,
+        }
+    }
+}
+
+/// Escala modal do vamp de UM acorde (harmonia estática — sem rastrear acordes).
+/// Fela puxa para o menor-sétima/dórico; JB para o dominante-sétima/mixolídio
+/// (ver `concept.md §3`). É dado para o motor de baixo/temas (Gaps C/E); a máquina
+/// de arranjo já o carrega por cena, mesmo que ainda nada o soe.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mode {
+    Dorian = 0,     // menor-sétima modal (Fela)
+    Mixolydian = 1, // dominante-sétima bluesy (JB)
+    Aeolian = 2,    // menor natural
+    Ionian = 3,     // maior
+}
+
 /// Cue de transição (control → generation thread).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -100,6 +141,8 @@ pub enum Cue {
     SetPreset(PresetId),
     Paradinha,
     TriggerVoice { voice: Voice, gain: f32 },
+    /// Lança uma cena de arranjo na próxima fronteira de compasso (Gap D).
+    LaunchScene(SceneId),
 }
 
 /// Evento emitido pelo GrooveClock a cada fronteira de step.
