@@ -1,15 +1,18 @@
 //! BarBuffer — struct de compasso pré-gerado + wrappers de fila SPSC.
 
-use casa13_types::{NoteEvent, PresetId};
+use casa13_types::{BassNote, NoteEvent, PresetId};
 use heapless::Vec as HVec;
 
 pub const MAX_EVENTS_PER_BAR: usize = 128;
+pub const MAX_BASS_PER_BAR: usize = 32;
 
 /// Buffer de um compasso completo pré-gerado.
 /// Stack-allocated via heapless::Vec — clone é memcpy, zero heap.
 #[derive(Clone)]
 pub struct BarBuffer {
     pub events: HVec<NoteEvent, MAX_EVENTS_PER_BAR>,
+    /// Linha de baixo do compasso (vamp de um acorde — Gap C).
+    pub bass: HVec<BassNote, MAX_BASS_PER_BAR>,
     pub bar_number: i64,
     pub bpm_at_generation: f64,
     pub preset: PresetId,
@@ -19,6 +22,7 @@ impl BarBuffer {
     pub fn new() -> Self {
         Self {
             events: HVec::new(),
+            bass: HVec::new(),
             bar_number: 0,
             bpm_at_generation: 100.0,
             preset: PresetId::Ijexa,
@@ -27,6 +31,7 @@ impl BarBuffer {
 
     pub fn clear(&mut self) {
         self.events.clear();
+        self.bass.clear();
         self.bar_number = 0;
     }
 }

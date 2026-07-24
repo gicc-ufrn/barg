@@ -134,6 +134,41 @@ pub enum Mode {
     Ionian = 3,     // maior
 }
 
+impl Mode {
+    /// Terça do modo (semitons a partir da fundamental): menor (3) nos modos menores,
+    /// maior (4) nos maiores. É o que distingue dórico (Fela) de mixolídio (JB) no baixo.
+    pub fn third(self) -> i8 {
+        match self {
+            Mode::Dorian | Mode::Aeolian => 3,
+            Mode::Mixolydian | Mode::Ionian => 4,
+        }
+    }
+
+    /// Sétima do modo: menor (10) nos modais Fela/JB, maior (11) no jônio.
+    pub fn seventh(self) -> i8 {
+        match self {
+            Mode::Ionian => 11,
+            _ => 10,
+        }
+    }
+
+    /// Paleta de tons do acorde para o baixo do vamp, em semitons a partir da
+    /// fundamental: [fundamental, terça, quinta, sétima, oitava]. Um acorde só
+    /// (harmonia estática) — o baixo ostinatia sobre estes.
+    pub fn chord_tones(self) -> [i8; 5] {
+        [0, self.third(), 7, self.seventh(), 12]
+    }
+}
+
+/// Nota de baixo gerada para um compasso (vamp de um acorde). Pitch em MIDI.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct BassNote {
+    pub midi_note: u8,
+    pub frame_offset: i32,
+    pub gain: f32,
+}
+
 /// Cue de transição (control → generation thread).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]

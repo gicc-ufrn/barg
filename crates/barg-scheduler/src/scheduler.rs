@@ -70,6 +70,14 @@ impl SchedulerAntecipado {
         }
     }
 
+    /// Retorna as notas de baixo do compasso atual (Gap C).
+    pub fn current_bass(&self) -> &[casa13_types::BassNote] {
+        match &self.current_bar {
+            Some(bar) => bar.bass.as_slice(),
+            None => &[],
+        }
+    }
+
     pub fn overrun_count(&self) -> u32 {
         self.overrun_count
     }
