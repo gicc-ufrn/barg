@@ -184,8 +184,9 @@ pub struct PatternNote {
     pub velocity: u8,
 }
 
-/// Capacidade máxima de notas de um padrão MIDI carregado (baixo ou tema).
-pub const MAX_PATTERN_NOTES: usize = 256;
+/// Capacidade máxima de notas de um padrão MIDI carregado (baixo ou tema). Generosa para
+/// cobrir riffs/temas longos; o loader sinaliza truncamento em vez de descartar em silêncio.
+pub const MAX_PATTERN_NOTES: usize = 512;
 
 /// Padrão MIDI sequenciado de N compassos (loop), importado de um clip do DAW (Gap E).
 /// Tipo único para baixo e tema (antes eram `BassPattern`/`ThemePattern` idênticos).
