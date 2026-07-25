@@ -4,9 +4,11 @@
 pub mod bass;
 pub mod clock;
 pub mod intensity;
+pub mod sampler;
 pub mod synth;
 
 pub use bass::{BassSynth, BassVoice};
+pub use sampler::{Sample, SampleBank, SampleZone, SampledBassVoice};
 pub use clock::GrooveClock;
 pub use intensity::IntensityAnalyzer;
 pub use synth::PercussionSynth;
