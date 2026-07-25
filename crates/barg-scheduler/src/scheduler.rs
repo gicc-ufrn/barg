@@ -49,17 +49,56 @@ impl SchedulerAntecipado {
         }
     }
 
-    /// Retorna eventos para o step dado no compasso atual.
-    /// Filtra eventos cujo frame_offset cai no range do step.
-    /// Retorna todos os eventos do compasso atual. O caller filtra por janela de
-    /// step (ver `casa13_pull_output`). TODO(arquitetura): mover o filtro por range
-    /// para cá como `dispatch_step()`, tornando o dispatch uma unidade testável em
-    /// vez de lógica duplicada no FFI e no jitter_benchmark.
-    pub fn events_for_step(&self, _step: u8, _samples_per_step: f64) -> &[NoteEvent] {
+    /// Filtra eventos cujo frame_offset cai no range [step_start, step_end)
+    /// e calcula o offset relativo adicionando step_offset.
+    pub fn dispatch_events(
+        &self,
+        step_start: i32,
+        step_end: i32,
+        step_offset: i32,
+    ) -> impl Iterator<Item = (&NoteEvent, i32)> {
+        self.current_events().iter().filter_map(move |ev| {
+            if ev.frame_offset >= step_start && ev.frame_offset < step_end {
+                Some((ev, ev.frame_offset - step_start + step_offset))
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn dispatch_bass(
+        &self,
+        step_start: i32,
+        step_end: i32,
+        step_offset: i32,
+    ) -> impl Iterator<Item = (&casa13_types::BassNote, i32)> {
+        self.current_bass().iter().filter_map(move |n| {
+            if n.frame_offset >= step_start && n.frame_offset < step_end {
+                Some((n, n.frame_offset - step_start + step_offset))
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn dispatch_theme(
+        &self,
+        step_start: i32,
+        step_end: i32,
+        step_offset: i32,
+    ) -> impl Iterator<Item = (&casa13_types::ThemeNote, i32)> {
         match &self.current_bar {
-            Some(bar) => bar.events.as_slice(),
+            Some(bar) => bar.theme.as_slice(),
             None => &[],
         }
+        .iter()
+        .filter_map(move |n| {
+            if n.frame_offset >= step_start && n.frame_offset < step_end {
+                Some((n, n.frame_offset - step_start + step_offset))
+            } else {
+                None
+            }
+        })
     }
 
     /// Retorna todos os eventos do compasso atual (para dispatch simplificado).
@@ -80,6 +119,10 @@ impl SchedulerAntecipado {
 
     pub fn overrun_count(&self) -> u32 {
         self.overrun_count
+    }
+
+    pub fn current_bar(&self) -> Option<&BarBuffer> {
+        self.current_bar.as_ref()
     }
 
     pub fn reset(&mut self) {
