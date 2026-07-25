@@ -59,7 +59,8 @@ impl SampleBank {
     }
 
     /// Seleciona a zona para (nota, velocity), rotacionando os round-robins por `rr`.
-    fn select(&self, note: u8, vel: u8, rr: u32) -> Option<usize> {
+    /// Público para permitir verificação do mapeamento (ex.: parser SFZ no FFI).
+    pub fn select(&self, note: u8, vel: u8, rr: u32) -> Option<usize> {
         let count = self.matching(note, vel).count();
         if count == 0 {
             return None;
