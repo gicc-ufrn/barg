@@ -22,8 +22,9 @@ impl SchedulerAntecipado {
     }
 
     /// Chamado na fronteira de compasso (step 0). Tenta pop da BarQueue.
-    /// RT-safe.
-    pub fn on_bar_boundary(&mut self, consumer: &mut rtrb::Consumer<BarBuffer>) {
+    /// RT-safe. Retorna `true` se consumiu um compasso fresco da fila (uma vaga foi
+    /// liberada) — o caller usa isso para sinalizar a gen thread (§5.1).
+    pub fn on_bar_boundary(&mut self, consumer: &mut rtrb::Consumer<BarBuffer>) -> bool {
         // Salva current como fallback
         if let Some(ref current) = self.current_bar {
             self.fallback_bar = Some(current.clone());
@@ -33,6 +34,7 @@ impl SchedulerAntecipado {
             Ok(bar) => {
                 self.current_bar = Some(bar);
                 self.cold_start = false;
+                true
             }
             Err(_) => {
                 if self.cold_start {
@@ -42,21 +44,61 @@ impl SchedulerAntecipado {
                     self.current_bar = self.fallback_bar.clone();
                     self.overrun_count += 1;
                 }
+                false
             }
         }
     }
 
-    /// Retorna eventos para o step dado no compasso atual.
-    /// Filtra eventos cujo frame_offset cai no range do step.
-    /// Retorna todos os eventos do compasso atual. O caller filtra por janela de
-    /// step (ver `casa13_pull_output`). TODO(arquitetura): mover o filtro por range
-    /// para cá como `dispatch_step()`, tornando o dispatch uma unidade testável em
-    /// vez de lógica duplicada no FFI e no jitter_benchmark.
-    pub fn events_for_step(&self, _step: u8, _samples_per_step: f64) -> &[NoteEvent] {
+    /// Filtra eventos cujo frame_offset cai no range [step_start, step_end)
+    /// e calcula o offset relativo adicionando step_offset.
+    pub fn dispatch_events(
+        &self,
+        step_start: i32,
+        step_end: i32,
+        step_offset: i32,
+    ) -> impl Iterator<Item = (&NoteEvent, i32)> {
+        self.current_events().iter().filter_map(move |ev| {
+            if ev.frame_offset >= step_start && ev.frame_offset < step_end {
+                Some((ev, ev.frame_offset - step_start + step_offset))
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn dispatch_bass(
+        &self,
+        step_start: i32,
+        step_end: i32,
+        step_offset: i32,
+    ) -> impl Iterator<Item = (&casa13_types::BassNote, i32)> {
+        self.current_bass().iter().filter_map(move |n| {
+            if n.frame_offset >= step_start && n.frame_offset < step_end {
+                Some((n, n.frame_offset - step_start + step_offset))
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn dispatch_theme(
+        &self,
+        step_start: i32,
+        step_end: i32,
+        step_offset: i32,
+    ) -> impl Iterator<Item = (&casa13_types::TimedNote, i32)> {
         match &self.current_bar {
-            Some(bar) => bar.events.as_slice(),
+            Some(bar) => bar.theme.as_slice(),
             None => &[],
         }
+        .iter()
+        .filter_map(move |n| {
+            if n.frame_offset >= step_start && n.frame_offset < step_end {
+                Some((n, n.frame_offset - step_start + step_offset))
+            } else {
+                None
+            }
+        })
     }
 
     /// Retorna todos os eventos do compasso atual (para dispatch simplificado).
@@ -67,8 +109,20 @@ impl SchedulerAntecipado {
         }
     }
 
+    /// Retorna as notas de baixo do compasso atual (Gap C).
+    pub fn current_bass(&self) -> &[casa13_types::BassNote] {
+        match &self.current_bar {
+            Some(bar) => bar.bass.as_slice(),
+            None => &[],
+        }
+    }
+
     pub fn overrun_count(&self) -> u32 {
         self.overrun_count
+    }
+
+    pub fn current_bar(&self) -> Option<&BarBuffer> {
+        self.current_bar.as_ref()
     }
 
     pub fn reset(&mut self) {

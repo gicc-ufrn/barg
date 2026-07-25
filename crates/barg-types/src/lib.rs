@@ -93,6 +93,108 @@ pub enum PresetId {
     Baiao = 2,
 }
 
+/// Seção de arranjo (Gap D) — cena disparável por pad/pedal que muda o estado do
+/// acompanhamento (orquestração/energia/vamp). Modelo Fela/JB: navegar a forma
+/// verso→solo→break→ponte regendo pela energia, não trocando de instrumento.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SceneId {
+    Intro = 0,
+    Verso = 1,
+    Solo = 2,
+    Break = 3,
+    Ponte = 4,
+}
+
+pub const SCENE_COUNT: usize = 5;
+
+impl SceneId {
+    pub fn from_index(i: u32) -> Option<Self> {
+        match i {
+            0 => Some(SceneId::Intro),
+            1 => Some(SceneId::Verso),
+            2 => Some(SceneId::Solo),
+            3 => Some(SceneId::Break),
+            4 => Some(SceneId::Ponte),
+            _ => None,
+        }
+    }
+}
+
+/// Escala modal do vamp de UM acorde (harmonia estática — sem rastrear acordes).
+/// Fela puxa para o menor-sétima/dórico; JB para o dominante-sétima/mixolídio
+/// (ver `concept.md §3`). É dado para o motor de baixo/temas (Gaps C/E); a máquina
+/// de arranjo já o carrega por cena, mesmo que ainda nada o soe.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mode {
+    Dorian = 0,     // menor-sétima modal (Fela)
+    Mixolydian = 1, // dominante-sétima bluesy (JB)
+    Aeolian = 2,    // menor natural
+    Ionian = 3,     // maior
+}
+
+impl Mode {
+    /// Terça do modo (semitons a partir da fundamental): menor (3) nos modos menores,
+    /// maior (4) nos maiores. É o que distingue dórico (Fela) de mixolídio (JB) no baixo.
+    pub fn third(self) -> i8 {
+        match self {
+            Mode::Dorian | Mode::Aeolian => 3,
+            Mode::Mixolydian | Mode::Ionian => 4,
+        }
+    }
+
+    /// Sétima do modo: menor (10) nos modais Fela/JB, maior (11) no jônio.
+    pub fn seventh(self) -> i8 {
+        match self {
+            Mode::Ionian => 11,
+            _ => 10,
+        }
+    }
+
+    /// Paleta de tons do acorde para o baixo do vamp, em semitons a partir da
+    /// fundamental: [fundamental, terça, quinta, sétima, oitava]. Um acorde só
+    /// (harmonia estática) — o baixo ostinatia sobre estes.
+    pub fn chord_tones(self) -> [i8; 5] {
+        [0, self.third(), 7, self.seventh(), 12]
+    }
+}
+
+/// Nota temporizada disparada para a audio thread: pitch MIDI + offset em frames + ganho.
+/// Tipo único compartilhado por baixo e tema (antes eram `BassNote`/`ThemeNote` idênticos).
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct TimedNote {
+    pub midi_note: u8,
+    pub frame_offset: i32,
+    pub gain: f32,
+}
+
+/// Nome de domínio para a linha de baixo (é uma `TimedNote`).
+pub type BassNote = TimedNote;
+
+/// Nota pré-sequenciada num padrão MIDI (baixo ou tema), em beats.
+#[derive(Clone, Copy, Debug)]
+pub struct PatternNote {
+    /// Posição da nota em beats (0.0 = início do compasso 0).
+    pub beat: f64,
+    pub midi_note: u8,
+    pub velocity: u8,
+}
+
+/// Capacidade máxima de notas de um padrão MIDI carregado (baixo ou tema).
+pub const MAX_PATTERN_NOTES: usize = 256;
+
+/// Padrão MIDI sequenciado de N compassos (loop), importado de um clip do DAW (Gap E).
+/// Tipo único para baixo e tema (antes eram `BassPattern`/`ThemePattern` idênticos).
+#[derive(Clone, Debug, Default)]
+pub struct MidiPattern {
+    /// Nº de compassos do padrão antes de fazer loop.
+    pub length_bars: u32,
+    /// Notas do padrão (posição em beats relativa ao início do padrão).
+    pub notes: heapless::Vec<PatternNote, MAX_PATTERN_NOTES>,
+}
+
 /// Cue de transição (control → generation thread).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -100,6 +202,7 @@ pub enum Cue {
     SetPreset(PresetId),
     Paradinha,
     TriggerVoice { voice: Voice, gain: f32 },
+    LaunchScene(SceneId),
 }
 
 /// Evento emitido pelo GrooveClock a cada fronteira de step.
