@@ -160,25 +160,20 @@ impl Mode {
     }
 }
 
-/// Nota de baixo gerada para um compasso (vamp de um acorde). Pitch em MIDI.
+/// Nota temporizada disparada para a audio thread: pitch MIDI + offset em frames + ganho.
+/// Tipo único compartilhado por baixo e tema (antes eram `BassNote`/`ThemeNote` idênticos).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
-pub struct BassNote {
+pub struct TimedNote {
     pub midi_note: u8,
     pub frame_offset: i32,
     pub gain: f32,
 }
 
-/// Um padrão de baixo sequenciado de N compassos (Gap E).
-#[derive(Clone, Debug, Default)]
-pub struct BassPattern {
-    /// O número de compassos do padrão (antes de fazer loop).
-    pub length_bars: u32,
-    /// Notas do padrão (offset em f64 beats relativo ao início do padrão).
-    pub notes: heapless::Vec<PatternNote, 128>,
-}
+/// Nome de domínio para a linha de baixo (é uma `TimedNote`).
+pub type BassNote = TimedNote;
 
-/// Nota pré-sequenciada no padrão (baixo ou tema).
+/// Nota pré-sequenciada num padrão MIDI (baixo ou tema), em beats.
 #[derive(Clone, Copy, Debug)]
 pub struct PatternNote {
     /// Posição da nota em beats (0.0 = início do compasso 0).
@@ -187,20 +182,17 @@ pub struct PatternNote {
     pub velocity: u8,
 }
 
-/// Nota de tema disparada para a audio thread.
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-pub struct ThemeNote {
-    pub midi_note: u8,
-    pub frame_offset: i32,
-    pub gain: f32,
-}
+/// Capacidade máxima de notas de um padrão MIDI carregado (baixo ou tema).
+pub const MAX_PATTERN_NOTES: usize = 256;
 
-/// Um padrão de tema sequenciado de N compassos (Gap E).
+/// Padrão MIDI sequenciado de N compassos (loop), importado de um clip do DAW (Gap E).
+/// Tipo único para baixo e tema (antes eram `BassPattern`/`ThemePattern` idênticos).
 #[derive(Clone, Debug, Default)]
-pub struct ThemePattern {
+pub struct MidiPattern {
+    /// Nº de compassos do padrão antes de fazer loop.
     pub length_bars: u32,
-    pub notes: heapless::Vec<PatternNote, 256>,
+    /// Notas do padrão (posição em beats relativa ao início do padrão).
+    pub notes: heapless::Vec<PatternNote, MAX_PATTERN_NOTES>,
 }
 
 /// Cue de transição (control → generation thread).

@@ -86,7 +86,7 @@ impl SchedulerAntecipado {
         step_start: i32,
         step_end: i32,
         step_offset: i32,
-    ) -> impl Iterator<Item = (&casa13_types::ThemeNote, i32)> {
+    ) -> impl Iterator<Item = (&casa13_types::TimedNote, i32)> {
         match &self.current_bar {
             Some(bar) => bar.theme.as_slice(),
             None => &[],

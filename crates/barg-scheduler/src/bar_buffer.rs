@@ -1,6 +1,6 @@
 //! BarBuffer — struct de compasso pré-gerado + wrappers de fila SPSC.
 
-use casa13_types::{BassNote, NoteEvent, PresetId, ThemeNote};
+use casa13_types::{BassNote, NoteEvent, PresetId, TimedNote};
 use heapless::Vec as HVec;
 
 pub const MAX_EVENTS_PER_BAR: usize = 128;
@@ -14,7 +14,7 @@ pub struct BarBuffer {
     /// Linha de baixo do compasso (vamp de um acorde — Gap C).
     pub bass: HVec<BassNote, MAX_BASS_PER_BAR>,
     /// Linha de tema do compasso (Gap E).
-    pub theme: HVec<ThemeNote, 128>,
+    pub theme: HVec<TimedNote, 128>,
     pub bar_number: i64,
     pub bpm_at_generation: f64,
     pub preset: PresetId,

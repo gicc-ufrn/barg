@@ -10,8 +10,6 @@
 use std::sync::Arc;
 use crate::bass::BassVoice;
 
-/// Número de vozes de playback simultâneas (caudas de release/legato do baixo).
-const POOL: usize = 6;
 /// Ataque/release curtos (s) para evitar cliques em note_on / troca de nota.
 const ATTACK_S: f32 = 0.003;
 const RELEASE_S: f32 = 0.030;
@@ -99,29 +97,39 @@ impl Default for PoolVoice {
     }
 }
 
-/// Baixo sampleado — implementa `BassVoice`. Segura o banco ativo (Arc) e um pool de vozes.
-pub struct SampledBassVoice {
+/// Voz sampleada RT-safe: pool de `N` vozes lendo um `SampleBank` imutável.
+/// `choke = true` dá comportamento mono-legato (o baixo: solta as vozes ativas ao atacar
+/// a nova); `choke = false` é polifônico (temas/acordes — Gap E). Só LÊ buffers
+/// pré-carregados: sem alloc/lock/panic no caminho quente.
+pub struct SampledVoice<const N: usize> {
     engine_sr: f64,
     latency_frames: i32,
     bank: Option<Arc<SampleBank>>,
-    voices: [PoolVoice; POOL],
+    voices: [PoolVoice; N],
     rr_counter: u32,
     age_counter: u64,
     atk_coef: f32,
     rel_coef: f32,
+    choke: bool,
 }
 
-impl SampledBassVoice {
-    pub fn new(sample_rate: f64) -> Self {
+/// Baixo (Gap C): 6 vozes, mono-legato (choke).
+pub type SampledBassVoice = SampledVoice<6>;
+/// Tema (Gap E): 16 vozes, polifônico.
+pub type SampledPolyVoice = SampledVoice<16>;
+
+impl<const N: usize> SampledVoice<N> {
+    pub fn new(sample_rate: f64, choke: bool) -> Self {
         let mut s = Self {
             engine_sr: sample_rate,
             latency_frames: 0,
             bank: None,
-            voices: [PoolVoice::default(); POOL],
+            voices: [PoolVoice::default(); N],
             rr_counter: 0,
             age_counter: 0,
             atk_coef: 0.0,
             rel_coef: 0.0,
+            choke,
         };
         s.recalc_coefs();
         s
@@ -164,7 +172,7 @@ impl SampledBassVoice {
     }
 }
 
-impl BassVoice for SampledBassVoice {
+impl<const N: usize> BassVoice for SampledVoice<N> {
     fn note_on(&mut self, midi: u8, frame_offset: i32, gain: f32) {
         let bank = match &self.bank {
             Some(b) => b,
@@ -183,17 +191,18 @@ impl BassVoice for SampledBassVoice {
             * zone.tune_ratio;
         let zgain = gain * zone.gain;
 
-        // Legato mono-ish: solta as vozes ativas e ataca a nova.
-        for v in self.voices.iter_mut() {
-            if v.active {
-                v.releasing = true;
+        // Mono-legato: solta as vozes ativas antes de atacar (só quando `choke`).
+        if self.choke {
+            for v in self.voices.iter_mut() {
+                if v.active {
+                    v.releasing = true;
+                }
             }
         }
 
         self.age_counter += 1;
         let idx = self.pick_voice();
-        let v = &mut self.voices[idx];
-        *v = PoolVoice {
+        self.voices[idx] = PoolVoice {
             active: true,
             zone_idx: zi,
             pos: 0.0,
@@ -276,170 +285,6 @@ impl BassVoice for SampledBassVoice {
     }
 }
 
-/// Tema sampleado (Gap E). Polifônico, sem legato-choke.
-pub struct SampledPolyVoice {
-    engine_sr: f64,
-    latency_frames: i32,
-    bank: Option<Arc<SampleBank>>,
-    voices: [PoolVoice; 16],
-    rr_counter: u32,
-    age_counter: u64,
-    atk_coef: f32,
-    rel_coef: f32,
-}
-
-impl SampledPolyVoice {
-    pub fn new(sample_rate: f64) -> Self {
-        let mut s = Self {
-            engine_sr: sample_rate,
-            latency_frames: 0,
-            bank: None,
-            voices: [PoolVoice::default(); 16],
-            rr_counter: 0,
-            age_counter: 0,
-            atk_coef: 0.0,
-            rel_coef: 0.0,
-        };
-        s.recalc_coefs();
-        s
-    }
-
-    fn recalc_coefs(&mut self) {
-        self.atk_coef = (-1.0 / (ATTACK_S as f64 * self.engine_sr)).exp() as f32;
-        self.rel_coef = (-1.0 / (RELEASE_S as f64 * self.engine_sr)).exp() as f32;
-    }
-
-    pub fn set_bank(&mut self, bank: Option<Arc<SampleBank>>) -> Option<Arc<SampleBank>> {
-        core::mem::replace(&mut self.bank, bank)
-    }
-
-    pub fn has_bank(&self) -> bool {
-        self.bank.is_some()
-    }
-
-    fn pick_voice(&self) -> usize {
-        let mut best = 0usize;
-        let mut best_age = u64::MAX;
-        for (i, v) in self.voices.iter().enumerate() {
-            if !v.active {
-                return i;
-            }
-            if v.age < best_age {
-                best_age = v.age;
-                best = i;
-            }
-        }
-        best
-    }
-}
-
-impl BassVoice for SampledPolyVoice {
-    fn note_on(&mut self, midi: u8, frame_offset: i32, gain: f32) {
-        let bank = match &self.bank {
-            Some(b) => b,
-            None => return,
-        };
-        let vel = (gain.clamp(0.0, 1.0) * 127.0).round() as u8;
-        let zi = match bank.select(midi, vel, self.rr_counter) {
-            Some(i) => i,
-            None => return,
-        };
-        self.rr_counter = self.rr_counter.wrapping_add(1);
-        let zone = &bank.zones[zi];
-        let target_hz = midi_to_hz(midi as f64);
-        let rate = (target_hz / zone.root_hz)
-            * (zone.sample.sample_rate / self.engine_sr)
-            * zone.tune_ratio;
-        let zgain = gain * zone.gain;
-
-        // Sem legato mono-ish! Vozes podem sobrepor (polifonia).
-        // Apenas atualiza a voz selecionada.
-
-        self.age_counter += 1;
-        let idx = self.pick_voice();
-        let v = &mut self.voices[idx];
-        
-        // Se a voz escolhida ainda estava ativa (stealing), força o reinício
-        *v = PoolVoice {
-            active: true,
-            zone_idx: zi,
-            pos: 0.0,
-            rate,
-            start: (frame_offset + self.latency_frames).max(0),
-            gain: zgain,
-            env: 0.0,
-            releasing: false,
-            age: self.age_counter,
-        };
-    }
-
-    fn render(&mut self, out: &mut [f32]) {
-        let bank = match self.bank.clone() {
-            Some(b) => b,
-            None => return,
-        };
-        let atk = self.atk_coef;
-        let rel = self.rel_coef;
-        for v in self.voices.iter_mut() {
-            if !v.active {
-                continue;
-            }
-            if v.zone_idx >= bank.zones.len() {
-                v.active = false;
-                continue;
-            }
-            let pcm = &bank.zones[v.zone_idx].sample.pcm;
-            let len = pcm.len();
-            if len < 2 {
-                v.active = false;
-                continue;
-            }
-            for s in out.iter_mut() {
-                if v.start > 0 {
-                    v.start -= 1;
-                    continue;
-                }
-                let i = v.pos as usize;
-                if i + 1 >= len {
-                    v.active = false;
-                    break;
-                }
-                let frac = (v.pos - i as f64) as f32;
-                let smp = pcm[i] * (1.0 - frac) + pcm[i + 1] * frac;
-
-                if v.releasing {
-                    v.env *= rel;
-                } else if v.env < 1.0 {
-                    v.env = 1.0 - (1.0 - v.env) * atk;
-                }
-
-                *s += smp * v.gain * v.env;
-                v.pos += v.rate;
-
-                if v.releasing && v.env < 1.0e-4 {
-                    v.active = false;
-                    break;
-                }
-            }
-        }
-    }
-
-    fn set_sample_rate(&mut self, sr: f64) {
-        self.engine_sr = sr;
-        self.recalc_coefs();
-    }
-
-    fn set_latency_frames(&mut self, frames: i32) {
-        self.latency_frames = frames;
-    }
-
-    fn reset(&mut self) {
-        for v in self.voices.iter_mut() {
-            v.active = false;
-        }
-    }
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -469,7 +314,7 @@ mod tests {
 
     #[test]
     fn no_bank_is_silent() {
-        let mut v = SampledBassVoice::new(48000.0);
+        let mut v = SampledBassVoice::new(48000.0, true);
         v.note_on(40, 0, 1.0);
         let mut buf = [0.0f32; 512];
         v.render(&mut buf);
@@ -478,7 +323,7 @@ mod tests {
 
     #[test]
     fn plays_sample_when_bank_loaded() {
-        let mut v = SampledBassVoice::new(48000.0);
+        let mut v = SampledBassVoice::new(48000.0, true);
         v.set_bank(Some(one_zone_bank(midi_to_hz(40.0))));
         v.note_on(40, 0, 1.0);
         let mut buf = [0.0f32; 512];
@@ -491,11 +336,11 @@ mod tests {
     fn octave_up_plays_twice_as_fast() {
         // Nota uma oitava acima da raiz → rate ≈ 2× → consome a amostra ~2× mais rápido.
         let root = 40u8;
-        let mut lo = SampledBassVoice::new(48000.0);
+        let mut lo = SampledBassVoice::new(48000.0, true);
         lo.set_bank(Some(one_zone_bank(midi_to_hz(root as f64))));
         lo.note_on(root, 0, 1.0);
 
-        let mut hi = SampledBassVoice::new(48000.0);
+        let mut hi = SampledBassVoice::new(48000.0, true);
         hi.set_bank(Some(one_zone_bank(midi_to_hz(root as f64))));
         hi.note_on(root + 12, 0, 1.0);
 
