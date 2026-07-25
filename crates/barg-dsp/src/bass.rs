@@ -12,6 +12,20 @@
 
 use core::f64::consts::PI;
 
+/// Backend de timbre do baixo — a costura que permite trocar procedural ↔ sampleado
+/// ao vivo (Gap C). O gerador simbólico não muda; só quem soa as notas. Ver
+/// `docs/research-bass-sampler-sequencer.md §5.1`.
+pub trait BassVoice {
+    /// Agenda uma nota. `frame_offset` é relativo ao bloco; `gain` ∈ 0..1 (proxy de
+    /// velocity — o sampler mapeia para camada/round-robin internamente).
+    fn note_on(&mut self, midi: u8, frame_offset: i32, gain: f32);
+    /// Renderiza somando em `out`. RT-safe.
+    fn render(&mut self, out: &mut [f32]);
+    fn set_sample_rate(&mut self, sr: f64);
+    fn set_latency_frames(&mut self, frames: i32);
+    fn reset(&mut self);
+}
+
 /// Constante de decaimento do envelope (s) — nota de baixo com sustain curto.
 const DECAY_S: f32 = 0.28;
 /// Ataque (s) — rápido, mas evita clique.
@@ -150,6 +164,25 @@ impl BassSynth {
     pub fn reset(&mut self) {
         self.active = false;
         self.env = 0.0;
+    }
+}
+
+/// O baixo procedural como um `BassVoice` (o baseline/fallback do A/B de timbre).
+impl BassVoice for BassSynth {
+    fn note_on(&mut self, midi: u8, frame_offset: i32, gain: f32) {
+        self.schedule(midi, frame_offset, gain);
+    }
+    fn render(&mut self, out: &mut [f32]) {
+        BassSynth::render(self, out);
+    }
+    fn set_sample_rate(&mut self, sr: f64) {
+        BassSynth::set_sample_rate(self, sr);
+    }
+    fn set_latency_frames(&mut self, frames: i32) {
+        BassSynth::set_latency_frames(self, frames);
+    }
+    fn reset(&mut self) {
+        BassSynth::reset(self);
     }
 }
 
