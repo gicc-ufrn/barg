@@ -169,6 +169,40 @@ pub struct BassNote {
     pub gain: f32,
 }
 
+/// Um padrão de baixo sequenciado de N compassos (Gap E).
+#[derive(Clone, Debug, Default)]
+pub struct BassPattern {
+    /// O número de compassos do padrão (antes de fazer loop).
+    pub length_bars: u32,
+    /// Notas do padrão (offset em f64 beats relativo ao início do padrão).
+    pub notes: heapless::Vec<PatternNote, 128>,
+}
+
+/// Nota pré-sequenciada no padrão (baixo ou tema).
+#[derive(Clone, Copy, Debug)]
+pub struct PatternNote {
+    /// Posição da nota em beats (0.0 = início do compasso 0).
+    pub beat: f64,
+    pub midi_note: u8,
+    pub velocity: u8,
+}
+
+/// Nota de tema disparada para a audio thread.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct ThemeNote {
+    pub midi_note: u8,
+    pub frame_offset: i32,
+    pub gain: f32,
+}
+
+/// Um padrão de tema sequenciado de N compassos (Gap E).
+#[derive(Clone, Debug, Default)]
+pub struct ThemePattern {
+    pub length_bars: u32,
+    pub notes: heapless::Vec<PatternNote, 256>,
+}
+
 /// Cue de transição (control → generation thread).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -176,7 +210,6 @@ pub enum Cue {
     SetPreset(PresetId),
     Paradinha,
     TriggerVoice { voice: Voice, gain: f32 },
-    /// Lança uma cena de arranjo na próxima fronteira de compasso (Gap D).
     LaunchScene(SceneId),
 }
 

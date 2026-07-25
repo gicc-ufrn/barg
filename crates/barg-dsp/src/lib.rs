@@ -8,7 +8,7 @@ pub mod sampler;
 pub mod synth;
 
 pub use bass::{BassSynth, BassVoice};
-pub use sampler::{Sample, SampleBank, SampleZone, SampledBassVoice};
+pub use sampler::{Sample, SampleBank, SampleZone, SampledBassVoice, SampledPolyVoice};
 pub use clock::GrooveClock;
 pub use intensity::IntensityAnalyzer;
 pub use synth::PercussionSynth;
