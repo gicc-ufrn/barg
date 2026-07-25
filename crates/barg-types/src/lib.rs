@@ -91,6 +91,8 @@ pub enum PresetId {
     Ijexa = 0,
     Samba = 1,
     Baiao = 2,
+    Afrobeat = 3,
+    Funk = 4,
 }
 
 /// Seção de arranjo (Gap D) — cena disparável por pad/pedal que muda o estado do
