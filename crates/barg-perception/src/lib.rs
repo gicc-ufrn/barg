@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Casa 13 — camada de percepção (V4): transdução acústico → simbólica.
+//! BARG — camada de percepção (V4): transdução acústico → simbólica.
 //!
 //! Adapter na **porta de entrada** (Ports & Adapters, ver `docs/architecture-v4.md`):
 //! converte áudio multicanal dos microfones da bateria em eventos simbólicos limpos

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Casa 13 — Scheduler components (BarBuffer, BarQueue, SchedulerAntecipado, QuantizedLaunch).
+//! BARG — Scheduler components (BarBuffer, BarQueue, SchedulerAntecipado, QuantizedLaunch).
 
 pub mod bar_buffer;
 pub mod scheduler;

@@ -36,12 +36,16 @@ Duas propriedades governam o desenho e não são negociáveis:
 | Crate | Papel |
 |---|---|
 | `barg-types` | Tipos fundamentais, `no_std` — sem alocação, sem dependência de plataforma |
-| `barg-dsp` | `GrooveClock` sample-accurate, análise de intensidade, síntese percussiva, sampler |
+| `barg-dsp` | `GrooveClock` sample-accurate e determinístico — a grade de referência — e análise de intensidade |
 | `barg-perception` | Onset multicanal → `DrumHit { canal, peça, dinâmica, frame absoluto }`, com arbitragem entre canais para rejeitar vazamento |
 | `barg-scheduler` | Escalonamento antecipado e lançamento quantizado — a camada assíncrona do padrão *Half-Sync/Half-Async* |
 
 **Previstos:** `barg-analise` (alinhamento e comparação) e `barg-corpus` (leitor do
 [FARG](https://github.com/gicc-ufrn/farg)).
+
+**O que deliberadamente não está aqui:** síntese sonora. Vozes percussivas, baixo procedural
+e sampler são do instrumento, não da análise — nada disso é necessário para reproduzir a
+comparação entre execuções nem para implementar o FARG. Saíram na v0.2.0.
 
 ## Construir e testar
 
