@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: "BARG — Biblioteca de Análise de Registros de Gestos"
+abstract: >-
+  Biblioteca de análise do gesto musical percussivo: percepção de onset
+  multicanal, relógio determinístico, escalonamento antecipado e comparação
+  entre execuções. Artefato de pesquisa do GICC — Grupo de Pesquisa em
+  Informação, Cultura e Computação (UFRN). Glosa em inglês: Gesture Record
+  Analysis Library.
+message: "Se usar esta biblioteca, por favor cite-a."
+type: software
+license: Apache-2.0
+repository-code: "https://github.com/gicc-ufrn/barg"
+authors:
+  - family-names: Figueira
+    given-names: Fernando
+    affiliation: "Universidade Federal do Rio Grande do Norte"
+keywords:
+  - microtiming
+  - percussão
+  - música afro-brasileira
+  - análise de performance
+  - real-time audio

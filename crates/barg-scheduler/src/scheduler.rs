@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
 //! SchedulerAntecipado — consome BarBuffers na fronteira de compasso.
 //! RT-safe: pop de rtrb é wait-free, clone de BarBuffer é memcpy (heapless).
 
 use crate::bar_buffer::BarBuffer;
-use casa13_types::NoteEvent;
+use barg_types::NoteEvent;
 
 pub struct SchedulerAntecipado {
     current_bar: Option<BarBuffer>,
@@ -71,7 +72,7 @@ impl SchedulerAntecipado {
         step_start: i32,
         step_end: i32,
         step_offset: i32,
-    ) -> impl Iterator<Item = (&casa13_types::BassNote, i32)> {
+    ) -> impl Iterator<Item = (&barg_types::BassNote, i32)> {
         self.current_bass().iter().filter_map(move |n| {
             if n.frame_offset >= step_start && n.frame_offset < step_end {
                 Some((n, n.frame_offset - step_start + step_offset))
@@ -86,7 +87,7 @@ impl SchedulerAntecipado {
         step_start: i32,
         step_end: i32,
         step_offset: i32,
-    ) -> impl Iterator<Item = (&casa13_types::TimedNote, i32)> {
+    ) -> impl Iterator<Item = (&barg_types::TimedNote, i32)> {
         match &self.current_bar {
             Some(bar) => bar.theme.as_slice(),
             None => &[],
@@ -110,7 +111,7 @@ impl SchedulerAntecipado {
     }
 
     /// Retorna as notas de baixo do compasso atual (Gap C).
-    pub fn current_bass(&self) -> &[casa13_types::BassNote] {
+    pub fn current_bass(&self) -> &[barg_types::BassNote] {
         match &self.current_bar {
             Some(bar) => bar.bass.as_slice(),
             None => &[],
@@ -143,7 +144,7 @@ impl Default for SchedulerAntecipado {
 mod tests {
     use super::*;
     use crate::bar_buffer::bar_queue_new;
-    use casa13_types::Voice;
+    use barg_types::Voice;
 
     #[test]
     fn cold_start_silence() {

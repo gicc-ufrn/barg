@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
 //! GrooveClock — relógio sample-accurate do Casa 13.
 //! Emite steps (semicolcheias) com frame offset exato no buffer de áudio.
 
-use casa13_types::StepEvent;
+use barg_types::StepEvent;
 
 pub struct GrooveClock {
     sample_rate: f64,

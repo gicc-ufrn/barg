@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
 //! QuantizedLaunch — atrasa cues até a próxima fronteira de quantum.
 
-use casa13_types::Cue;
+use barg_types::Cue;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,7 +54,7 @@ impl QuantizedLaunch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use casa13_types::PresetId;
+    use barg_types::PresetId;
 
     #[test]
     fn bar_quantum_waits_for_step_0() {

@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
 //! BarBuffer — struct de compasso pré-gerado + wrappers de fila SPSC.
 
-use casa13_types::{BassNote, NoteEvent, PresetId, TimedNote};
+use barg_types::{BassNote, NoteEvent, PresetId, TimedNote};
 use heapless::Vec as HVec;
 
 pub const MAX_EVENTS_PER_BAR: usize = 128;
@@ -55,7 +56,7 @@ pub fn bar_queue_new(capacity: usize) -> (rtrb::Producer<BarBuffer>, rtrb::Consu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use casa13_types::Voice;
+    use barg_types::Voice;
 
     #[test]
     fn bar_buffer_push_events() {

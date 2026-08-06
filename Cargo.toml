@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/barg-types",
+    "crates/barg-dsp",
+    "crates/barg-perception",
+    "crates/barg-scheduler",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/gicc-ufrn/barg"
+
+[workspace.dependencies]
+barg-types = { path = "crates/barg-types" }
+barg-dsp = { path = "crates/barg-dsp" }
+barg-scheduler = { path = "crates/barg-scheduler" }
+heapless = "0.8"
+rtrb = "0.3"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

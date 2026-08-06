@@ -1,5 +1,5 @@
 [package]
-name = "casa13-perception"
+name = "barg-perception"
 version.workspace = true
 edition.workspace = true
 

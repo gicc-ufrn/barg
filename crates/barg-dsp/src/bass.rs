@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! BassSynth — baixo procedural monofônico para o vamp de um acorde (Gap C).
 //!
 //! Timbre simples e barato: um dente-de-serra (via soma de senos limitada seria caro;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Casa 13 — Tipos fundamentais compartilhados por todos os crates.
 //! `no_std`-compatible para uso no audio thread.
 #![no_std]

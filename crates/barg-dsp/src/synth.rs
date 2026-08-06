@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
 //! PercussionSynth — síntese procedural de 6 vozes afro-brasileiras.
 //! RT-safe: sem alocação, voice stealing, latência de agendamento.
 
-use casa13_types::{Voice, VOICE_COUNT};
+use barg_types::{Voice, VOICE_COUNT};
 use core::f64::consts::PI;
 
 const MAX_VOICES: usize = 24;

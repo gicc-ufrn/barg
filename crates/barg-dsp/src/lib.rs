@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Casa 13 — DSP components (GrooveClock, IntensityAnalyzer, PercussionSynth).
 //! All components are RT-safe: no allocation, no locks, no panics in the hot path.
 

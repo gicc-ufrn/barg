@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Detector de onset por canal — envelope follower com limiar adaptativo + refratário.
 //! Reusa a estratégia do `IntensityAnalyzer` (envelope rápido vs. lento). Denormal-safe.
 //!

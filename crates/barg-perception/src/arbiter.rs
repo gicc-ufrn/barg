@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Cross-Channel Arbiter — rejeita bleed: 1 golpe físico → 1 `DrumHit` (doc §3.7).
 //!
 //! Regra (placeholder): se um canal de PRIORIDADE maior disparou dentro de uma janela de

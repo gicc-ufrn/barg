@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! IntensityAnalyzer — extrai intensidade (RMS) e densidade (onsets/s).
 //! RT-safe: sem alocação no path de process().
 

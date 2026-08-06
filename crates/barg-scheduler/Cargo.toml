@@ -1,9 +1,9 @@
 [package]
-name = "casa13-scheduler"
+name = "barg-scheduler"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-casa13-types = { workspace = true }
+barg-types = { workspace = true }
 heapless = { workspace = true }
 rtrb = { workspace = true }

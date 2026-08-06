@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! SamplePlayer — sampler multi-articulação RT-safe para o baixo (Gap C, fase B2/B3).
 //!
 //! Modelo: um `SampleBank` imutável (zonas mapeando nota/velocity/round-robin → PCM) é
