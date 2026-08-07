@@ -1,10 +1,15 @@
 # mise.toml — BARG. Contrato: lint / test / checks / ci (ver casa13-ponteio).
 [tools]
-rust = "1.90"
-python = "3.13"
-# Declarado aqui, não instalado na CI: `cargo install cargo-deny` compila do
-# zero e leva minutos; o backend do mise usa binário pronto.
+# components é obrigatório: o backend rust do mise instala o toolchain mínimo, e
+# sem isto `cargo clippy` falha com "'cargo-clippy' is not installed for the
+# toolchain". rustfmt pelo mesmo motivo.
+rust = { version = "1.90", components = "rustfmt,clippy" }
 "cargo:cargo-deny" = "latest"
+
+# Python NÃO é declarado de propósito. Os scripts em scripts/ci/ usam só a
+# biblioteca padrão, e declarar a versão fazia o mise compilar CPython do zero
+# no runner — três minutos e vinte, com bz2 e lzma faltando no final. O python3
+# do sistema basta.
 
 [tasks.build]
 description = "Build do workspace"
