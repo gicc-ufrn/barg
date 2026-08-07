@@ -8,15 +8,19 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/gicc-ufrn/barg"
 
 [workspace.dependencies]
-barg-types = { path = "crates/barg-types" }
-barg-dsp = { path = "crates/barg-dsp" }
-barg-scheduler = { path = "crates/barg-scheduler" }
+# path E version juntos: o path é usado no build local, a version é o que vai
+# para o crates.io — que proíbe dependência por path. Sem a version, o cargo-deny
+# lê a dependência como wildcard ("qualquer versão serve"), e para um crate
+# publicável isso é verdade e é um risco.
+barg-types = { path = "crates/barg-types", version = "0.2.1" }
+barg-dsp = { path = "crates/barg-dsp", version = "0.2.1" }
+barg-scheduler = { path = "crates/barg-scheduler", version = "0.2.1" }
 heapless = "0.8"
 rtrb = "0.3"
 
