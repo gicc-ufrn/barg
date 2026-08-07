@@ -15,5 +15,4 @@ jobs:
     name: lint + test + fronteira arquitetural
     uses: gicc-ufrn/.github/.github/workflows/mise-ci.yml@main
     with:
-      antes: cargo install --locked cargo-deny
       tarefas: ci

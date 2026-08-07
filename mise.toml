@@ -2,6 +2,9 @@
 [tools]
 rust = "1.90"
 python = "3.13"
+# Declarado aqui, não instalado na CI: `cargo install cargo-deny` compila do
+# zero e leva minutos; o backend do mise usa binário pronto.
+"cargo:cargo-deny" = "latest"
 
 [tasks.build]
 description = "Build do workspace"
