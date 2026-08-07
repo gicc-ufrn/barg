@@ -2,6 +2,7 @@
 name = "barg-dsp"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 
 [dependencies]
 barg-types = { workspace = true }

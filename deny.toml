@@ -24,7 +24,13 @@ confidence-threshold = 0.9
 
 [bans]
 multiple-versions = "warn"
+# Dependência sem versão fixa vinda do crates.io é risco real: qualquer versão
+# serve, e a próxima pode ser outra coisa.
 wildcards = "deny"
+# Mas `{ workspace = true }` entre crates do MESMO workspace não tem versão de
+# propósito -- é o mecanismo do Cargo para herdar do [workspace.dependencies],
+# e recusá-lo tornaria a regra inaplicável em qualquer workspace.
+allow-wildcard-paths = true
 
 [[bans.deny]]
 # Nenhum runtime de inferência no grafo da biblioteca (FF-C11, ADR-0006).

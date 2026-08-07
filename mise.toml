@@ -43,6 +43,10 @@ run = "cargo deny check advisories bans sources licenses"
 description = "ADR-0001: a biblioteca analisa, não gera som"
 run = "python3 scripts/ci/sem_sintese.py"
 
+[tasks."licencas:listar"]
+description = "Lista toda licença em uso e quem a traz — para decidir com dado, não com palpite"
+run = "cargo deny list"
+
 [tasks.checks]
 description = "Integridade arquitetural"
 depends = ["check:sem-app", "check:sem-sintese", "check:licencas"]
