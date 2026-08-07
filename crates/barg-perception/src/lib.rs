@@ -72,8 +72,8 @@ impl DrumEnergies {
 pub struct DrumHit {
     pub channel: u8,              // canal físico 0–7
     pub voice: Option<DrumVoice>, // peça mapeada (None = canal ainda não configurado)
-    pub velocity: f32,           // 0..1, do envelope no disparo
-    pub frame_timestamp: u64,    // frame absoluto no GrooveClock
+    pub velocity: f32,            // 0..1, do envelope no disparo
+    pub frame_timestamp: u64,     // frame absoluto no GrooveClock
 }
 
 /// Porta de entrada da percepção (Ports & Adapters). Substituível: mics, MIDI, mock offline.
@@ -174,13 +174,16 @@ mod tests {
             *k = 0.8;
         }
         let silent = vec![0.0f32; 2048];
-        let channels: [&[f32]; NUM_INPUT_CHANNELS] =
-            [&ch0, &silent, &silent, &silent, &silent, &silent, &silent, &silent];
+        let channels: [&[f32]; NUM_INPUT_CHANNELS] = [
+            &ch0, &silent, &silent, &silent, &silent, &silent, &silent, &silent,
+        ];
 
         let mut hits: Vec<DrumHit> = Vec::new();
         let energies = p.process_block(&channels, 0, &mut |h| hits.push(h));
 
-        assert!(hits.iter().any(|h| h.channel == 0 && h.voice == Some(DrumVoice::Kick)));
+        assert!(hits
+            .iter()
+            .any(|h| h.channel == 0 && h.voice == Some(DrumVoice::Kick)));
         assert!(energies.get(0) > 0.0);
     }
 
@@ -194,8 +197,8 @@ mod tests {
         }
         let silent = vec![0.0f32; 1024];
         let channels: [&[f32]; 10] = [
-            &silent, &silent, &silent, &silent, &silent, &silent, &silent, &silent,
-            &loud, &loud, // índices 8–9 (master) — devem ser ignorados
+            &silent, &silent, &silent, &silent, &silent, &silent, &silent, &silent, &loud,
+            &loud, // índices 8–9 (master) — devem ser ignorados
         ];
         let mut hits: Vec<DrumHit> = Vec::new();
         let _ = p.process_block(&channels, 0, &mut |h| hits.push(h));
