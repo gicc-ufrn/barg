@@ -1,0 +1,48 @@
+# mise.toml — BARG. Contrato: lint / test / checks / ci (ver casa13-ponteio).
+[tools]
+rust = "1.90"
+python = "3.13"
+
+[tasks.build]
+description = "Build do workspace"
+run = "cargo build --workspace --all-targets"
+
+[tasks.test]
+description = "Testes do workspace"
+run = "cargo test --workspace"
+
+[tasks."lint:clippy"]
+description = "Clippy sem tolerância a warning"
+run = "cargo clippy --workspace --all-targets -- -D warnings"
+
+[tasks."lint:fmt"]
+description = "Formatação (não altera arquivos)"
+run = "cargo fmt --all --check"
+
+[tasks.lint]
+description = "Análise estática"
+depends = ["lint:fmt", "lint:clippy"]
+
+[tasks."check:sem-app"]
+description = "FF-C9: nenhum crate da biblioteca depende de crate do produto"
+run = "python3 scripts/ci/sem_dependencia_de_app.py"
+
+[tasks."check:licencas"]
+description = "Nenhuma dependência copyleft entra numa biblioteca Apache-2.0"
+run = "cargo deny check licenses"
+
+[tasks."check:sem-sintese"]
+description = "ADR-0001: a biblioteca analisa, não gera som"
+run = "python3 scripts/ci/sem_sintese.py"
+
+[tasks.checks]
+description = "Integridade arquitetural"
+depends = ["check:sem-app", "check:sem-sintese", "check:licencas"]
+
+[tasks.ci]
+description = "O que a CI roda"
+depends = ["lint", "test", "checks"]
+
+[tasks.prepush]
+description = "Verificação rápida antes do push"
+depends = ["lint:fmt", "lint:clippy", "test"]

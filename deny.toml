@@ -1,0 +1,48 @@
+# cargo-deny — BARG é Apache-2.0 e é artefato de pesquisa citável.
+#
+# Uma dependência copyleft aqui contaminaria a biblioteca inteira e inviabilizaria
+# o uso pelo app comercial — que é precisamente a estrutura decidida na ADR-0001.
+# Isto é a versão executável daquela decisão.
+
+[licenses]
+# Permissivas, compatíveis com Apache-2.0.
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "CC0-1.0",
+]
+confidence-threshold = 0.9
+
+# GPL, AGPL, LGPL e MPL não aparecem em `allow` de propósito: qualquer uma delas
+# quebra o modelo. A ausência é a regra — não há lista de proibidas a manter.
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[[bans.deny]]
+# Nenhum runtime de inferência no grafo da biblioteca (FF-C11, ADR-0006).
+# A máquina que compara precisa ser verificável golpe a golpe.
+name = "tract-onnx"
+
+[[bans.deny]]
+name = "ort"
+
+[[bans.deny]]
+name = "candle-core"
+
+[[bans.deny]]
+name = "tch"
+
+[advisories]
+yanked = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
