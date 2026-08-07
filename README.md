@@ -1,5 +1,7 @@
 # BARG — Biblioteca de Análise de Registros de Gestos
 
+[![CI](https://github.com/gicc-ufrn/barg/actions/workflows/ci.yml/badge.svg)](https://github.com/gicc-ufrn/barg/actions/workflows/ci.yml)
+
 *Gesture Record Analysis Library*
 
 Biblioteca de análise do **gesto musical percussivo**: percepção de onset multicanal,
