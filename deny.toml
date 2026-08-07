@@ -45,4 +45,7 @@ yanked = "deny"
 
 [sources]
 unknown-registry = "deny"
+# Nenhuma dependência por git. A biblioteca é artefato de pesquisa citável: um
+# terceiro precisa reproduzir a análise a partir do crates.io, sem depender de
+# repositório que pode sumir ou ser reescrito.
 unknown-git = "deny"

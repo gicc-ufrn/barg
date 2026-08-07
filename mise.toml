@@ -36,8 +36,8 @@ description = "FF-C9: nenhum crate da biblioteca depende de crate do produto"
 run = "python3 scripts/ci/sem_dependencia_de_app.py"
 
 [tasks."check:licencas"]
-description = "Nenhuma dependência copyleft entra numa biblioteca Apache-2.0"
-run = "cargo deny check licenses"
+description = "CVE, licenças copyleft, e fonte das dependências"
+run = "cargo deny check advisories bans sources licenses"
 
 [tasks."check:sem-sintese"]
 description = "ADR-0001: a biblioteca analisa, não gera som"
